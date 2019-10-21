@@ -1,23 +1,16 @@
-// ConsoleApplication2.cpp : 定义控制台应用程序的入口点。
-//
-
 #include "stdafx.h"
 #include<iostream>
 #include<vector>
 #include<map>
 
 using namespace std;
-
-int nums[]= { 0,1,2,3,4,5,6,7,8 };
-int target = 5;
-
-
-
-class solution {
+class solution
+{
 public:
-	vector<int>twoSum(vector<int>&nums, int target)
+	vector<int> twoSum(vector<int> nums, int target)
 	{
-		map<int,int> m;
+
+		map<int, int> m;
 		vector<int> vec;
 		for (int i = 0; i < nums.size(); i++)
 		{
@@ -26,11 +19,42 @@ public:
 			{
 				vec.push_back(m[b]);
 				vec.push_back(i);
-				break
+				break;
 			}
 			m[nums[i]] = i;
 		}
 		return vec;
-
 	}
 };
+
+//vector<int> twoSum(vector<int> nums, int target)
+//{
+//	map<int, int> m;
+//	vector<int> vec;
+//	for (int i = 0; i < nums.size(); i++)
+//	{
+//		int b = target - nums[i];
+//		if (m.count(b))
+//		{
+//			vec.push_back(m[b]);
+//			vec.push_back(i);
+//			break;
+//		}
+//		m[nums[i]] = i;
+//	}
+//	return vec;
+//}
+
+void main()
+{
+	vector<int> nums = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	int target = 7;
+	solution solution1;
+	vector<int> a = solution1.twoSum(nums, target);
+	//vector<int> a = twoSum(nums, target);
+	for (int i = 0; i<a.size(); i++)
+		std::cout << a[i] << endl;
+	system("Pause");
+
+}
+
