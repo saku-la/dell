@@ -1,4 +1,6 @@
-
+//负数不行，123321
+//0也可以
+//
 #include "stdafx.h"
 #include<iostream>
 #include<vector>
