@@ -46,9 +46,17 @@ class KittiLoader(Dataset):
         return len(self.left_paths)
 
     def __getitem__(self, idx):
-        left_image = Image.open(self.left_paths[idx])
+        # left_image = Image.open(self.left_paths[idx])
         
         bg_image = Image.open(self.bg_paths[idx])
+        # print('ffffffffff',self.bg_paths[idx])
+
+        # print('xxxxxxxxxxxxx',self.left_paths[idx])
+        left_image=h5py.File(self.left_paths[idx])
+        for group2 in left_image.keys():
+            left_image=left_image[group2][:] 
+            left_image=np.transpose(left_image,(1,0))
+            left_image = Image.fromarray(left_image)
         # sample = {'left_image': left_image, 'right_image': right_image}
 
 

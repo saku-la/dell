@@ -9,6 +9,7 @@ import os
 import scipy.misc
 from skimage import io,data
 from erfnet import ERFNet
+from Jnet import Jnet
 
 # custom modules
 
@@ -28,7 +29,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import math
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def return_arguments():
@@ -40,16 +41,16 @@ def return_arguments():
 
     parser.add_argument('--data_dir',
                         help='path to the dataset folder',
-                        default='/media/usr523/6ADAA03FDAA00981/pickle/data/0719data_7/train/'
+                        default='/media/usr134/本地磁盘/syj/134net/DATA/'
                         )
     parser.add_argument('--val_data_dir',
                         help='path to the validation dataset folder. \
                             It should contain subfolders with following structure:\
                             "image_02/data" for left images and \
                             "image_03/data" for right images',
-                        default='/media/usr523/6ADAA03FDAA00981/pickle/data/0719data_7/test/'
+                        default='/media/usr134/本地磁盘/syj/134net/DATA/'
                         )
-    parser.add_argument('--model_path', help='path to the trained model',default='/media/usr523/6ADAA03FDAA00981/pickle/models/07197_data_cpt.pth')
+    parser.add_argument('--model_path', help='path to the trained model',default='/media/usr134/本地磁盘/syj/134net/1209.pth')
 
     parser.add_argument('--loadmodel', default='/media/a521/Shirley Passport/erfnet/XLL/models/1_cpt.pth',
                     help='load model')                    
@@ -71,7 +72,7 @@ def return_arguments():
                         help='number of total epochs to run')
     parser.add_argument('--learning_rate', default=1e-3,
                         help='initial learning rate (default: 1e-2)')
-    parser.add_argument('--batch_size', default=32,
+    parser.add_argument('--batch_size', default=1,
                         help='mini-batch size (default: 256)')
     parser.add_argument('--adjust_lr', default=True,
                         help='apply learning rate decay or not\
@@ -96,10 +97,10 @@ def return_arguments():
                         brightness and color respectively'
             )
 
-    parser.add_argument('--input_channels', default=3,
+    parser.add_argument('--input_channels', default=1,
                         help='Number of channels in input tensor')
                         
-    parser.add_argument('--num_workers', default=2,
+    parser.add_argument('--num_workers', default=0,
                         help='Number of workers in dataloader')
     parser.add_argument('--use_multiple_gpu', default=False)
 
@@ -142,7 +143,7 @@ class Model:
         self.device = args.device
         if args.model == 'stackhourglass':
             
-                self.model = ERFNet(2)
+                self.model = Jnet(1)
        
        
         self.model.cuda() #= self.model.to(self.device)
@@ -224,6 +225,16 @@ class Model:
 
                 left = data['left_image']
                 bg_image = data['bg_image']
+                left = nn.functional.interpolate(left, (1,4096), mode='bilinear', align_corners=True)
+                
+                #left=left.squeeze(2)
+                #conv=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1,padding=1)
+                #left=conv(left)
+                #left=left.unsqueeze(2)
+                left=left.permute(0,3,1,2)
+                ps = nn.PixelShuffle(64)
+                Net2Iput = ps(left)
+                Net2Iput=Net2Iput/40000.0
 
             
                 # plt.figure()
@@ -232,7 +243,7 @@ class Model:
                 # plt.imshow(bg_image.squeeze().cpu().detach().numpy())
                 # plt.show()  
                 
-                disps = self.model(left)
+                disps = self.model(Net2Iput)
                 # print('gggggggggggggggggggggggggggggggggggggggggg',left.shape,disps.shape)
                 # plt.imshow(disps.squeeze().cpu().detach().numpy())
                 # plt.show() 
@@ -267,7 +278,7 @@ class Model:
 
 
 
-            if epoch%5==0:
+            if epoch%2==0:
                 self.model.eval()
                 i=0
                 running_val_loss = 0.0
@@ -276,6 +287,13 @@ class Model:
 
                     left = data['left_image']
                     bg_image = data['bg_image']
+                    left = nn.functional.interpolate(left, (1,4096), mode='bilinear', align_corners=True)
+                    left=left.permute(0,3,1,2)
+                    #convnn=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1,padding=1)
+                    #left=convnn(left)
+                    ps = nn.PixelShuffle(64)
+                    Net2Iput = ps(left)
+                    Net2Iput=Net2Iput/40000.0
 
             
    
@@ -283,7 +301,7 @@ class Model:
                         # newinput=torch.cat([left,bg],1)
                         # disps = self.model(newinput)
 
-                        disps = self.model(left)
+                        disps = self.model(Net2Iput)
             
                     
                     loss1 = self.loss_function(disps,bg_image)        
