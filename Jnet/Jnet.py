@@ -183,7 +183,6 @@ class Jnet(nn.Module):
         x7up=self.upconv1(x7up)
         x7up=self.upconv1(x7up)
         x7up=self.upconv1(x7up)
-        x7up=self.upconv1(x7up)
         x6up=self.upconv1(x63)
         x6up=self.upconv1(x6up)
         x6up=self.upconv1(x6up)
