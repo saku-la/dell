@@ -41,16 +41,16 @@ def return_arguments():
 
     parser.add_argument('--data_dir',
                         help='path to the dataset folder',
-                        default='/media/usr134/本地磁盘/syj/134net/DATA/'
+                        default='/media/usr134/本地磁盘/syj/Jnet/DATA'
                         )
     parser.add_argument('--val_data_dir',
                         help='path to the validation dataset folder. \
                             It should contain subfolders with following structure:\
                             "image_02/data" for left images and \
                             "image_03/data" for right images',
-                        default='/media/usr134/本地磁盘/syj/134net/DATA/'
+                        default='/media/usr134/本地磁盘/syj/Jnet/DATA'
                         )
-    parser.add_argument('--model_path', help='path to the trained model',default='/media/usr134/本地磁盘/syj/134net/1209.pth')
+    parser.add_argument('--model_path', help='path to the trained model',default='/media/usr134/本地磁盘/syj/Jnet/1209.pth')
 
     parser.add_argument('--loadmodel', default='/media/a521/Shirley Passport/erfnet/XLL/models/1_cpt.pth',
                     help='load model')                    

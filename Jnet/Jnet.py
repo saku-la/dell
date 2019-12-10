@@ -138,12 +138,12 @@ class Jnet(nn.Module):
         self.maxpool=maxpool(3)
     def forward(self,x):
         left = nn.functional.interpolate(x, (1,4096), mode='bilinear', align_corners=True)
-                
+        left=left.permute(0,3,1,2)        
         #left=left.squeeze(2)
-        conv=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=(3,1), stride=1,padding=1)
-        left=conv(left)
+        #conv=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=(3,1), stride=1,padding=1)
+        #left=conv(left)
         # left=left.unsqueeze(2)
-        left=left.permute(0,3,1,2)
+        
         ps = nn.PixelShuffle(64)
         Net2Iput = ps(left)
         Net2Iput=Net2Iput/40000.0
