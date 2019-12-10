@@ -225,16 +225,7 @@ class Model:
 
                 left = data['left_image']
                 bg_image = data['bg_image']
-                left = nn.functional.interpolate(left, (1,4096), mode='bilinear', align_corners=True)
                 
-                #left=left.squeeze(2)
-                #conv=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1,padding=1)
-                #left=conv(left)
-                #left=left.unsqueeze(2)
-                left=left.permute(0,3,1,2)
-                ps = nn.PixelShuffle(64)
-                Net2Iput = ps(left)
-                Net2Iput=Net2Iput/40000.0
 
             
                 # plt.figure()
@@ -243,7 +234,7 @@ class Model:
                 # plt.imshow(bg_image.squeeze().cpu().detach().numpy())
                 # plt.show()  
                 
-                disps = self.model(Net2Iput)
+                disps = self.model(left)
                 # print('gggggggggggggggggggggggggggggggggggggggggg',left.shape,disps.shape)
                 # plt.imshow(disps.squeeze().cpu().detach().numpy())
                 # plt.show() 
@@ -287,13 +278,13 @@ class Model:
 
                     left = data['left_image']
                     bg_image = data['bg_image']
-                    left = nn.functional.interpolate(left, (1,4096), mode='bilinear', align_corners=True)
-                    left=left.permute(0,3,1,2)
-                    #convnn=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1,padding=1)
-                    #left=convnn(left)
-                    ps = nn.PixelShuffle(64)
-                    Net2Iput = ps(left)
-                    Net2Iput=Net2Iput/40000.0
+                    # left = nn.functional.interpolate(left, (1,4096), mode='bilinear', align_corners=True)
+                    # left=left.permute(0,3,1,2)
+                    # #convnn=nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1,padding=1)
+                    # #left=convnn(left)
+                    # ps = nn.PixelShuffle(64)
+                    # Net2Iput = ps(left)
+                    # Net2Iput=Net2Iput/40000.0
 
             
    
@@ -301,7 +292,7 @@ class Model:
                         # newinput=torch.cat([left,bg],1)
                         # disps = self.model(newinput)
 
-                        disps = self.model(Net2Iput)
+                        disps = self.model(left)
             
                     
                     loss1 = self.loss_function(disps,bg_image)        
