@@ -1,0 +1,356 @@
+Abstract: Artificial intelligence (AI) techniques such as deep learning (DL) for computational
+imaging usually require to experimentally collect a large set of labeled data to train a neural
+network. Here we demonstrate that a practically usable neural network for computational
+imaging can be trained by using simulation data. We take computational ghost imaging (CGI)
+as an example to demonstrate this method. We develop a one-step end-to-end neural network,
+trained with simulation data, to reconstruct two-dimensional images directly from experimentally
+acquired one-dimensional bucket signals, without the need of the sequence of illumination
+patterns. This is in particular useful for image transmission through quasi-static scattering media
+as little care is needed to take to simulate the scattering process when generating the training data.
+We believe that the concept of training using simulation data can be used in various DL-based
+solvers for general computational imaging.
+? 2019 Optical Society of America under the terms of the OSA Open Access Publishing Agreement
+1. Introduction
+In recent years, learning-based methods have been widely used to solve problems in divergent
+fields, such as visual object recognition, natural language processing, object detection, and among
+many others [1]. People have also proposed to use learning-based methods such as support
+vector regression (SVR) [2] and deep learning (DL) to solve inverse problems in optical imaging
+[3]. In the latter case, people have used DL in optical tomography [4], computational ghost
+imaging [5,6], digital holography [7¨C9], imaging through scattering media [10¨C12], fluorescence
+lifetime imaging [13], lensless imaging [14], and imaging in low light condition [5,6,15]. This
+kind of techniques usually require many hours or even days to experimentally collect tens of
+thousands of labeled data for neural network training. This is not easily affordable, in particular
+in the application of computational ghost imaging, which requires many exposures corresponding
+different modes of structured illumination to sample an object or a scene. Here we demonstrate
+that a practically usable neural network for computational imaging can be trained by using
+simulation data. Particularly, we take computational ghost imaging (CGI) for our demonstration.
+It is well known that in ghost imaging [16¨C25] image reconstruction is achieved by the
+numerical correlation of two beams, an object beam and a reference beam. The object beam
+interacts with the object and is collected by a single-pixel camera whereas the reference beam
+never interacts with the object and is recorded by a high-spatial-resolution detector. GI was first
+demonstrated as a manifest of quantum entanglement of photon pairs [16], but soon after the
+demonstration of GI was also realized by classical light sources [18,19].
+GI can be implemented in a single-beam geometry if the reference beam can be numerically
+evaluated, in the case that the random patterns applied to the object are known or pre-specifiable.
+In this way, the reconstruction can be computational, and thus it earns the term of computational
+#365138 https://doi.org/10.1364/OE.27.025560
+Journal ? 2019 Received 16 Apr 2019; revised 11 Aug 2019; accepted 13 Aug 2019; published 26 Aug 2019Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25561
+ghost imaging (CGI) [26,27]. Usually, spatial light modulators (SLMs) offer the ability to
+program the illumination beam with a sequence of, say, M, random patterns. The integral of each
+modulated image is acquired by a bucket detector that is synchronized with the SLM, yielding a
+series of one-dimensional (1D) intensity data of length M. This high-efficient detection scheme
+is in particular desirable in low light environments [28], X-ray imaging [29,30], multipspectral
+imaging [31], information security [32,33] and sensing in remote distance [34,35], to name a few.
+In CGI, the number of resolution cells N that covers an object is usually equal to the number
+of illumination patterns M that were applied to the object according to the Nyquist sampling
+criterion [36]. Thus, in order to achieve high resolution imaging, one usually needs to have
+many incoherent illumination patterns to interacts with the object, i.e., M should be as large
+as possible. However, the sequential loading of a large set of illumination patterns to the SLM
+is usually time-consuming due to its modulation frequency [37]. Effects have been made to
+increase the imaging speed, for example by multiplexing the SLM [38], or replacing the SLM
+with a programmable LED array [39]. An alternative approach is to reduce the number of
+sampling M. When the sampling ration ¦Â = M/N is reduced, one needs to reformulate the
+reconstruction as an inverse problem and employ optimization algorithms such as compressive
+sensing (CS) [40,41], Gerchberg-Saxton algorithm [42] and other iteration algorithms [17,43].
+In particular, compressive ghost imaging (CSGI) [40,41] enables the reconstruction of an N-pixel
+image from M? N¡± measurements by exploiting the sparsity of the object. However, the degree
+of down-sampling is limited by the sparsity of the object [44] and the quality of the reconstructed
+image is sensitive to detection noise [5,6].
+Deep learning has been used for CGI as well. It was first proposed by Lyu et al. [5]. They
+have demonstrated the reconstruction of high quality images with significant reduced number of
+sampling (¦Â  1). In their method, the same set of illumination patterns were applied to interact
+with the objects in both the training and test sets. As ¦Â is small, the images reconstructed directly
+using correlation [26,27] from the acquired bucket signals were severely corrupted by noise.
+These noisy images were paired up with the corresponding known object images and were used
+to train the DNN. The trained DNN then was used to improve the Signal-to-Noise-Ratio (SNR)
+of test images reconstructed in the first step. We note that the same strategy was used in [6].
+However, in all the CGI algorithms proposed so far (including those based on DL), the sequence
+of random patterns interact with the object should be known. In the applications of remote
+sensing, atmosphere turbulence prevents the detection or evaluation of the exact disturbance
+of the random patterns, resulting in image degradation in the reconstruction [34,45]. Thus the
+other motivation of the present work is to design an end-to-end approach that can reconstruct the
+object image directly from the bucket signal, without the use of the illumination patterns. As
+schematically outlined in Fig. 1, the approach proposed here in this manuscript is inspired by the
+technique of deep learning. In most DL-based computational imaging, thousands pairs of labeled
+input-output data should be acquired to train a neural network. This will take a lot more time in
+CGI owing to the special way of data acquisition using a bucket detector. So the other motivation
+in this manuscript is to demonstrate the use simulation data to train the network. This requires
+the close simulation of the physical process of CGI. Once trained, the neural network can be
+used for image reconstruction from experimentally acquired bucket signals that are physically
+modulated by the same set of random patterns.Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25562
+Fig. 1. Schematic illustration of the training pipeline of the proposed end-to-end deep
+learning ghost imaging. A 2D object function is sequentially multiplied by a real-valued
+random pattern, which is produced by numerical calculation of free space propagation of
+a random phase function. The resulting amplitude is then numerically propagated over a
+distance and reaches the bucket detector. This will end up with a digit which represents
+the total energy of the light field in this measurement. Running through this calculation
+process M times with M different random patterns, we will have a sequence of digits with
+the length of M associated with one object. Then we run the above calculation over again
+with many different object functions, and obtain associated bucket signals. Then we feed
+the ground-truth images and their corresponding bucket signals into a Neural Network and
+optimize its weights and biases. The neural network trained by simulation data produced in
+this way is used to reconstruct images from experimental acquired data under the illumination
+of the same set of M random patterns.
+2. Method
+2.1. Learning-based approach
+For simplicity, we focus our discussion on the imaging of two-dimensional images, although GI
+can be used for 3D imaging. Let us denote the object as T?x, y¡±, where ?x, y¡± is the transverse
+coordinates at the object plane. The random patterns that interact with the object are denoted
+by Im?x, y¡±, where m = 1, 2, : : : , M. The 1D signal acquired by the bucket detector then can be
+written as
+Sm = ? Im?x, y¡±T?x, y¡±dxdy. ?1¡±
+Following the principle of GI, the image can be reconstructed by the correlation of the intensity
+fluctuation with the illumination speckle patterns
+eT?x, y¡±GI = h?Sm?Imi, ?2¡±
+where h¡¤i denotes an ensemble average over M measurements and h?Smi = Sm ? hSmi, h?Imi =
+Im
+? hImi.Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25563
+In CSGI, the image reconstruction is treat as an optimization problem and solved using
+compressed sensing algorithms. This is to find a solution
+eT?x, y¡±CS = T0?x, y¡± ?3¡±
+that minimizes the L1 norm in the sparse basis
+arg min k¦·fT0?x, y¡±gkL1, ?4¡±
+subject to
+? Im?x, y¡±T0?x, y¡±dxdy = Sm, 8m = 1, 2, : : : , M, ?5¡±
+where ¦· is the transform operator to the sparse basis.
+The method we propose here employs a deep neural network to reconstruct the object image
+directly from the bucket signal Sm, m = 1, 2, : : : , M. The reconstruction process can be expressed
+as
+eT = RfSmg, ?6¡±
+where Rf¡¤g represents the neural network that maps the bucket signal Sm back to the object space.
+This mapping from a 1D signal to a 2D image without knowing the transformation matrix is
+highly ill posed. Here we propose to learn a feasible neural network Relearn from a set of labeled
+data each of which pairs up a known object T?x, y¡±j and the corresponding sequence of bucket
+signal Smj , where j = 1, : : : , J, enumerates the total J different pairs of labeled data used for
+training. The network in this case can be written as
+Relearn = arg min
+R¦È,¦È 2¦¨
+J?j=1
+L?T?x, y¡±j, R¦ÈfSmj g¡± + ¡¯?¦È¡± ?7¡±
+where ¦¨ is the set of all possible parameters, L?¡¤¡± is a loss function to measure the error between
+the network output R¦ÈfSmj g and the ground-truth T?x, y¡±j, and ¡¯?¦È¡± is a regularization term on the
+parameters to avoid overfitting [46]. The set ¦¨ contains two types of parameters: non-learnable
+parameters and learnable parameters. The first type includes the parameters that specify the
+structure of the network, such as the type of the network, the number of layers, the number of
+neurons in each layer, and the size of the convolutional kernel, etc. that need to be manually
+specified before training. The other type includes the connection weights and bias between the
+neurons in two neighboring layers that should be adjusted automatically during the training phase.
+Once Relearn has been learned, the object image can be reconstructed according to
+eT?x, y¡±DL = RelearnfSmg. ?8¡±
+In contrast, the image reconstruction process in previous DL-based methods [5,6] was given by
+eT?x, y¡±0GIDL = Relearn 0 feT?x, y¡±GIg, ?9¡±
+where eT?x, y¡±GI is obtained according to Eq. (2) and
+Re0
+learn = arg min
+R0
+¦È,¦È 2¦¨
+J?j=1
+L?T?x, y¡±j, R¦È0 feT?x, y¡±j GIg¡± + ¡¯?¦È¡± ?10¡±
+Obviously, the input data to train the network Re0 are the images eT?x, y¡±j reconstructed by using
+the conventional GI algorithm and the corresponding ground truth T?x, y¡±j. When the sampling
+ratio ¦Â is small, the SNR of eT?x, y¡±j is low. Then the neural network trained according to Eq.
+(10) is more like denoising [47].Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25564
+2.2. Network structure
+Inspired by ResNet [48] and eHoloNet [8], we propose a neural network whose structure is
+schematically shown in Fig. 2. The input of the network is the normalized bucket signal with
+the length of M, while the output should be the predicted object image. We mainly used three
+types of modules to connect the input to the output: Fully connected layers, convolution blocks,
+and residual blocks. Two fully connected layers of 1024 ¡Á 1 and 4096 ¡Á 1 in size, respectively,
+are used to discover the association of the values in the input bucket signal. The output of the
+second fully connected layer is reshaped to an image with the size of 64 ¡Á 64. Then we exploit
+the powerful convolutional neural network (CNN) to reconstruct the object image. We used 4
+independent paths, each of which has a max-pooling layer to downsample the incoming image
+with a magnitude of different order of 2, creating 4 independent data flows. Then each data flow
+is sent to a set of 4 identical residual blocks, which are used to extract feature maps at different
+scales. Followed the residual layers, there are up-sampling layers that can restore the size of
+feature maps back to 64¡Á64. Then the 4 paths are concatenated into one. The concatenated image
+then passes through 4 convolution layers and 1 max-pooling layer and yield the reconstructed
+image. In Fig. 2, a pair of digits in the format of m ? n is placed below each convolutional layer
+and up-sampling layer to denote the size of the input and the size of the output of this layer. We
+also used dropout layers and batch-normalization (BN) layers to prevent overfitting [49,50].
+Fig. 2. Proposed neural network architecture to learn the image restore principle from
+measured intensities in GI.
+2.3. Network training
+As mentioned before, the training of the network is a process to optimize the values of the
+parameters in the set ¦¨. These parameters include the weighting factors and bias connected the
+neurons in two neighboring layers. In the case of supervised learning as in our study, we need
+a substantial collection of known images and their bucket signals as constraints to iteratively
+optimize the neural network so that it can reconstruct an expected image from a bucket signal in
+the test set. In the training process, we define the loss function as the mean square error (MSE)
+between the reconstructed image and the corresponding known image (ground truth):
+L =
+1
+J0WH
+J0
+?j=1
+W?u=1
+H?v=1
+R¦ÈfSmj g ? T?x, y¡±2 ?11¡±
+where W, H are the width and height of the reconstructed image, respectively, and J0 = 5 is the
+mini-batch size in the stochastic gradient descent (SGD) method [51]. We adopted the AdamResearch Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25565
+optimizer [52] to optimize the weights and set the learning rate at 0.01. The training step was
+300, 000. The keep probability of the dropout layer was 0.9. The program was implemented in
+Python version 3.6 using TensorFlow. A graphics processing unit (NVIDIA Quadro P6000) was
+used to accelerate the computation.
+2.4. Preparation of training data
+The training of a neural network usually needs a lot of labeled data. In ghost imaging, the bucket
+signal is generated by actively illuminating an object with many structural patterns as discussed
+above. The collection of all the labeled data experimentally in time consuming, if not unfeasible.
+For example, we used 9, 000 images from the MNIST hand written digit databases [53] and their
+corresponding bucket signals each of which is M = 64 in length to train the network. The total
+number of measurement is 576, 000.
+In order to reduce the cost of data collection, we propose a framework of using the simulated
+data to train the network, which is shown in Fig. 1. This was performed to simulate the process
+of bucket signal generation. The simulation should be as close as possible to the experiment. We
+assumed that the light source was a collimated coherent laser beam with the wavelength of 633
+nm. It was modulated by a random pattern, and numerically propagated over a distance d = 3 m,
+resulting a pattern Im?x, y¡± that interacts with the object. The random pattern Im?x, y¡± was then
+multiplied with an object T?x, y¡± in the training set, and the resulting 2D intensity disturbance
+was integrated to generate one data point of the bucket signal. In our study, a same set of M
+different random patterns of 32 ¡Á 32 in size was used in both the simulation and experiment.
+After the set of M patterns ran over with the same T, we obtain a bucket signal Sm of length M.
+We then paired up the resulting signal Sm and the corresponding 2D image T. Then we replaced
+the object and ran the above simulation process again, and obtained another pair of labeled data.
+This process was run over and over again across the whole 9, 000 objects in the training set were
+paired up with their corresponding bucket signals.
+In both the simulation and experiment, we binarized and then resized the MNIST hand written
+digits in use to 32 ¡Á 32 so that we have N = 1024. The sampling ratio ¦Â = M/1024. In our study,
+we will examine how the value of ¦Â affects the reconstructed image. We mainly considered 5
+different cases for M: 1024, 256, 64, 16 and 4 so that ¦Â = 100 %, 25 %, 6.25 %, 1.56 % and
+0.39 %, respectively. In the simulation, the sampling interval of the random patterns and the
+object images is 128 ¦Ìm in the transverse directions.
+3. Results and discussions
+3.1. Experimental setup
+The experimental setup is schematically showed in Fig. 3, which is actually a CGI geometry.
+Polarized light emitted from a He-Ne laser (Thorlabs, HRS015) with the wavelength ¦Ë = 633 nm
+was first coupled into a polarization maintaining fiber then expanded and collimated by a lens L1.
+Then the collimated beam was splitted into two arms by a beam splitter BS1. The transmitted
+beam then was shane onto a digital mirror device (DMD), where a set of M = 64 random patterns,
+Im
+?x, y¡±, m = 1, : : : , M, were sequentially displayed. These random patterns were precomputed
+by Fresnel diffraction over 3 m (see Sec. 3.2.4 for details). The beam reflected from the SLM
+was reflected by BS1 and then projected onto an SLM (Pluto-Vis, Holoeye Photonics AG) using
+a 4f system consisting of lenses L2 and L3. The object image, T?x, y¡±, was displayed on the SLM.
+The beam reflected from the SLM was collected by a bucket detector through a lens L4. We used
+an sCMOS camera (Zyla 4.2 PLUS sCMOS, Andor Technology Ltd) in our experiment instead
+because we do not have a bucket detector. But we integrated each acquired image to produce the
+bucket signal Sm. This does not affect the measurement results.Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25566
+Fig. 3. Schematic diagram of the optical setup. L1, L2, L3, L4 are lenses with focal length
+of 80mm, 80mm, 80mm, 40mm. P1, P2 and P3 are linear polarizers. P1 and P3 are vertically
+polarized, and P2 is horizontally polarized. BS1 and BS2 are both beam splitter. DMD:
+digital micro-mirror device. SLM: spatial light modulator. Patterns used to modulate the
+light field were sequentially displayed on the DMD. The object was placed on the SLM.
+Note that the pixel size of the SLM and the DMD we used in the experiment is 8 ¦Ìm and
+10.8 ¦Ìm, respectively. So cares should be taken in both the simulation and experiment so that the
+training data obtained by numerical simulations were generated in the same conditions as in the
+experiment. Taking this into account, we approximately used 512 ¡Á 512 and 379 ¡Á 379 pixels to
+represent the object and the random patterns, respectively, to meet the 128 ¦Ìm sampling interval
+in the simulation. Through the established experimental setup and prepared data set we collected
+the bucket signals corresponding to 1, 000 objects in the test set.
+3.2. Results
+The main results are plotted in Fig. 4. One can clearly see that, in both the simulation and
+experiment, the object image can be successfully reconstructed from the 1D bucket signal with
+the sampling ratio as low as ¦Â = 1.56 %, although the images are apparently distorted. But the
+images are nearly perfectly reconstructed when ¦Â increases to 6.25 %. However, no image can be
+reconstructed when ¦Â = 0.39 % in our experiment.
+We compared the proposed DL-based (DLGI) method with the conventional correlation-based
+CGI, and compressive-sensing-based GI (CSGI) in terms of reconstruction performance with
+respect to the sampling ratio ¦Â. For conventional CGI, when ¦Â is high, for instance, ¦Â = 100 %,
+the reconstructed images still contains a lot of noise. This is common because the SNR in this
+case is just 1 [37]. As expected, the SNR becomes even worse when ¦Â becomes low, and becomes
+completely corrupted when ¦Â = 6.25 %.
+The situations become much improved when CSGI is used to reconstruct the image. When
+¦Â = 100 % and ¦Â = 25 % the object image can be perfect reconstructed in simulation using the
+TVAL3 algorithm [54]. But CSGI is sensitive to noise [5]. This affects the actual performance,
+as evidenced by the second row in Fig. 4.
+Thus, we can see that the proposed method has the best performance among the three when
+the sampling ratio ¦Â is larger than 6.25 %. More evidences are shown in Fig. 5.Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25567
+Fig. 4. Comparison of simulation and experiment results from GI, CSGI, DLGI at different
+¦Â.
+Fig. 5. Comparison of experiment results from GI, CSGI, DLGI when ¦Â = 6.25%.
+3.3. Discussions
+3.3.1. Accuracy
+Now we make a quantitative evaluation of the performance by using three metrics, namely,
+the prediction accuracy by Support Vector Machines (SVM), the model of which we used is
+described in [55], the root of mean square error (RMSE)
+RMSE = " WH 1 ?uW=1 ?vH=1?eT?x, y¡± ? T?x, y¡±¡±2#
+12
+?12¡±
+the structural similarity index (SSIM) [56]
+SSIM =
+?2ueTuT + c1¡±?¦ÒeTT + c2¡±
+?ue2 T + u2 T + c1¡±?¦ÒeT2 + ¦ÒT2 + c2¡± ?13¡±
+where uf , f 2 fT, eTg, is the mean of the image f , ¦Òf2 is the variance, ¦ÒeTT is the covariance of eT
+and T, and c1 and c2 are regularization parameters.
+We calculated the averaged values of these three metrics of 100 reconstructed images randomly
+selected out of the total 1, 000 in the test set, and plot the results in Fig. 6. As expected, the
+conventional correlation-based CGI has the worst performance measured by all these three
+metrics. CSGI performs better than the conventional correlation-based CGI under different
+sampling conditions. This is expectable, as convinced also by Kate et al. [40]. The proposedResearch Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25568
+DLGI has the overall best performance measured by all these three metrics, in a very good
+consistence with the results plotted in Fig. 4. In particular, Fig. 6(c) suggests that the proposed
+method can reconstruct images nearly perfectly with the SPA value goes up to 0.92 even when ¦Â
+is as small as 6.25 %.
+Fig. 6. Quantitative evaluation of GI, CSGI, DLGI in experiment. N = ¦Â ¡¤ W ¡¤ H is the
+sampling times. Each marker represents the mean performance from 100 different test
+objects at different ¦Â. Each error bar represents the standard deviation. (a) RMSE indicator
+curve. (b) SSIM indicator curve. (c) SVM prediction accuracy indicator curve.
+3.3.2. Robustness
+The above experimental results demonstrate the usability of simulation data in the training of the
+neural network that can reconstruct ghost images from experimental data in the test set. The
+reason for this is that the simulation should be run in the geometric and sampling conditions as
+close to the experimental setup as possible. This is evidenced by the simulated and experimental
+acquired bucket signals of the same object plotted in Fig. 7. One can see clearly that the two
+sequences are highly coincident with each other. Indeed, we calculated the Pearson correlation
+coefficient (PCC) between them, and the value is 0.91. For all the 1, 000 images in the test set,
+the averaged PCC is 0.9037.
+Fig. 7. Comparison of model recovery performance between simulation and experimental
+data.
+3.3.3. Generalization
+To examine the generalization of the trained neural network model, here we use it to recover the
+images of objects that are different from those in the training set. For convenience, we test itResearch Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25569
+with English letters and double-seam patterns. Some of the reconstructed images are shown in
+Fig. 8. Although the network was trained by using the MNIST handwritten data set, it is clearly
+seen that it can be used to reconstruct the images of English letters and the double-seam patterns
+when the sampling ratio ¦Â is 25 % and above. The averaged SSIM is 0.69 when ¦Â = 25 %. Even
+when ¦Â = 6.25 % the reconstructed images are still distinguishable, although they are distorted.
+This averaged SSIM in this case is 0.57, at the same level as that of the reconstructed handwritten
+digits plotted in Fig. 6(b). We also observed that the images cannot be reconstructed when ¦Â is
+lower that 6.25%. This is reasonable because of insufficiency of acquired information, as also
+evidenced in Fig. 4.
+Fig. 8. Network generalization test results.
+3.4. Image transmission through scattering layers
+Image transmission through scattering media is a critical issue with ghost imaging [57]. As
+mentioned in the Introduction, deep learning has been used for coherent imaging through scattering
+media under the illumination of continuous coherent light [10¨C12]. Here we demonstrate that
+the proposed ghost imaging neural network can be used to solve this problem as well. To prove
+this concept, we placed a ground glasses (Thorlabs, DG100X100-220) in a position between
+the object and the bucket detector, and collected the bucket signal, as schematically shown in
+Fig. 9(a). We then used the same neural network trained previously (without any scattering)
+to reconstruct the image. The experimental results are shown in Fig. 9(b). The direct images
+captured by a camera are shown in the speckle columns, which are speckle patterns of course.
+However, one can see that the trained neural network can successfully restore the images of the
+objects hidden behind the diffuser. We observed that it does not mattered at all if we changed the
+diffuser or its position, suggesting that the proposed method is quite robust against the realization
+of the random modulation that is introduced by the diffuser. Different from the previous research
+by Li et al [11], the proposed method does not need to model the scattering process when
+calculating the bucket signals in the training process. Instead, it can be scalable to different
+scattering media by taking the advantage of ghost imaging, which reconstructs the object image
+using the integration its speckle patterns.Research Article Vol. 27, No. 18 / 2 September 2019 / Optics Express 25570
+Fig. 9. Testing results of the proposed DLGI method dealing with scattering media when
+¦Â = 6.25 %.
+4. Conclusion
+In conclusion, we have demonstrated a deep-learning-based image reconstruction method for
+ghost imaging in this paper. We have developed a neural network to restore the object image
+directly from the measured bucket signal. We have demonstrated that the network can be well
+trained by using only simulation data, so that the cost of training can be significantly reduced. This
+is achieved by closed simulating the experimental data acquisition process. We have analyzed the
+performance of the proposed ghost imaging method under different sampling ratio conditions,
+and compared it with conventional GI and CSGI. Our observation suggests that the proposed
+method has much better performance in comparison to the other two especially at low sampling
+ratio. This has significant potential to increase the time efficiency of data acquisition in practical
+applications. We have also demonstrated image transmission through scattering media using the
+proposed ghost imaging method. One advantage that the proposed method can offer is that one
+does not need to take the scattering into account when generating the simulation data to train the
+network owing to the mechanism of ghost imaging. This can be applied in the circumstance that
+the scattering layer is relatively static during the course of data acquisition.
