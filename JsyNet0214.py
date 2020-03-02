@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -322,6 +321,8 @@ class ERFNet(nn.Module):
         self.aspp = ASPP(dim_in=128,dim_out=128,rate=1,bn_mom=0.007)
         self.psp_layer = PyramidPooling('psp', 128, 128,
                                         norm_layer=nn.BatchNorm2d)
+
+        self.Sigmoid=torch.nn.Sigmoid()
     def forward(self, input):
         # a6=input
         output = self.encoder(input)    #predict=False by default
@@ -342,11 +343,13 @@ class ERFNet(nn.Module):
         # #############################################
         
         output=self.decoder.forward(output)
-        output[output>0.5]=1
-        output[output<0.6]=0
+        output=output*100
+        output=self.Sigmoid(output)
+        # output[output>0.5]=1
+        # output[output<0.6]=0
         output=torch.mul(output,input)
         # print("output",output)
-        # print("input",input)
+        # print("output",output)
         return output
 class ERFNet2(nn.Module):
     def __init__(self, num_classes):  #use encoder to pass pretrained encoder
@@ -377,9 +380,9 @@ class ERFNet2(nn.Module):
         # #############################################
         
         output=self.decoder.forward(output)
-        output[output>0.5]=1
-        output[output<0.6]=0
-        output=torch.mul(output,input)
+        # output[output>0.5]=1
+        # output[output<0.6]=0
+        # output=torch.mul(output,input)
         # print("output",output)
         # print("input",input)
         return output

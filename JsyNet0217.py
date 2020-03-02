@@ -1,10 +1,13 @@
-
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 from ASPP import ASPP
+import cv2
+import scipy.misc
+from PIL import Image
+from torchvision import transforms
 from seg_opr.seg_oprs import ConvBnRelu
 from collections import OrderedDict
 import numpy as np
@@ -324,6 +327,58 @@ class ERFNet(nn.Module):
                                         norm_layer=nn.BatchNorm2d)
     def forward(self, input):
         # a6=input
+        pic=Image.open('/media/usr134/本地磁盘/syj/0217pic/1b.jpg')
+        transform2=transforms.Compose([transforms.CenterCrop((256,256)),transforms.ToTensor()])
+        pic=transform2(pic).cuda()
+        pic=torch.unsqueeze(pic,0)
+        output = self.encoder(pic)    #predict=False by default
+        #output = self.aspp(output)
+        # output = self.psp_layer(output)# duib shiyan jiezhujicu
+        # print('xxxxxxxxxxxxxxxxxxxxxx',output.shape)
+        # if(output()>0.5):
+        #     output=1
+        # if(output()<=0.5):
+        #     output=0
+        # #############################################
+        # output=output.split(1,1)
+        # disp_show = output[100].squeeze()
+        # plt.figure()
+        # plt.subplot(1,2,1)
+        # plt.imshow(disp_show.data.cpu().numpy())
+        # plt.show() 
+        # #############################################
+        
+        output=self.decoder.forward(output)
+        # outpic=output.cpu().detach().numpy()
+        
+        # cv2.imwrite('/media/usr134/本地磁盘/syj/0217pic/1a,jpg',output)
+        output[output>0.5]=1
+        output[output<0.6]=0
+        outpic = output.squeeze()
+        outpic = outpic.detach().cpu().numpy()
+        scipy.misc.imsave('/media/usr134/本地磁盘/syj/0217pic/1b.jpg',outpic)
+        i=0
+        numshape=input.shape[0]
+        numshape=numshape-1
+        output1=output
+        while i<numshape:
+            output=torch.cat((output,output1),0)
+            i=i+1
+        output=torch.mul(output,input)
+        # print("output",output)
+        # print("output",output)
+        return output
+class ERFNet2(nn.Module):
+    def __init__(self, num_classes):  #use encoder to pass pretrained encoder
+        super(ERFNet2,self).__init__()
+
+        self.encoder = Encoder(num_classes)
+        self.decoder = Decoder(1)
+        self.aspp = ASPP(dim_in=128,dim_out=128,rate=1,bn_mom=0.007)
+        self.psp_layer = PyramidPooling('psp', 128, 128,
+                                        norm_layer=nn.BatchNorm2d)
+    def forward(self, input):
+        # a6=input
         output = self.encoder(input)    #predict=False by default
         #output = self.aspp(output)
         # output = self.psp_layer(output)# duib shiyan jiezhujicu
@@ -342,9 +397,9 @@ class ERFNet(nn.Module):
         # #############################################
         
         output=self.decoder.forward(output)
-        output[output>0.5]=1
-        output[output<0.6]=0
-        output=torch.mul(output,input)
+        # output[output>0.5]=1
+        # output[output<0.6]=0
+        # output=torch.mul(output,input)
         # print("output",output)
         # print("input",input)
         return output
@@ -515,14 +570,18 @@ class Resnet50_md(nn.Module):
         concat1 = torch.cat((upconv1, self.udisp2), 1)
         iconv1 = self.iconv1(concat1)
         self.disp1 = self.disp1_layer(iconv1)
-        return self.disp1
+        aaaaa=self.disp1
+        # aaaaa.reshape([1,1,256,256])
+        return aaaaa
+
+
 
 class JsyNet(nn.Module):
     def __init__(self, num_classes):  #use encoder to pass pretrained encoder
         super(JsyNet,self).__init__()
 
         self.ERFNet = ERFNet(num_classes)
-        self.Resnet50_md = Resnet50_md(num_classes)
+        self.ERFNet2 = ERFNet2(num_classes)
         # self.aspp = ASPP(dim_in=128,dim_out=128,rate=1,bn_mom=0.007)
         # self.psp_layer = PyramidPooling('psp', 128, 128,
         #                                 norm_layer=nn.BatchNorm2d)
@@ -567,7 +626,7 @@ class JsyNet(nn.Module):
         # ps = nn.PixelShuffle(4)
         # Net2Iput = ps(Net2Iput)
 
-        Net2Iput=self.Resnet50_md(output)
+        Net2Iput=self.ERFNet2(output)
         # output[output>0.5]=1
         # output[output<0.6]=0
         
