@@ -1,0 +1,26 @@
+<annotation verified="no">
+  <folder>gt</folder>
+  <filename>100_3009</filename>
+  <path>C:\Users\zhushuo\Desktop\gt\100_3009.bmp</path>
+  <source>
+    <database>Unknown</database>
+  </source>
+  <size>
+    <width>256</width>
+    <height>256</height>
+    <depth>1</depth>
+  </size>
+  <segmented>0</segmented>
+  <object>
+    <name>0</name>
+    <pose>Unspecified</pose>
+    <truncated>0</truncated>
+    <Difficult>0</Difficult>
+    <bndbox>
+      <xmin>90</xmin>
+      <ymin>127</ymin>
+      <xmax>148</xmax>
+      <ymax>211</ymax>
+    </bndbox>
+  </object>
+</annotation>
